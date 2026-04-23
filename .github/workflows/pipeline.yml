@@ -46,8 +46,7 @@ jobs:
         run: pip install pytest pytest-cov
 
       - name: Run tests
-        run: |
-          pytest --cov=api tests/
+        run: PYTHONPATH=. pytest --cov=api tests/
       
       - name: Upload coverage
         uses: actions/upload-artifact@v4
