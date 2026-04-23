@@ -4,6 +4,7 @@ WORKDIR /app
 
 # Create non-root user
 RUN addgroup -S app && adduser -S app -G app
+RUN chown -R app:app /app
 USER app
 
 COPY package*.json ./
