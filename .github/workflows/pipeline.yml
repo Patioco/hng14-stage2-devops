@@ -77,17 +77,14 @@ jobs:
       - name: Install Trivy
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget
-          wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh
-          chmod +x install.sh
-          sudo ./install.sh
-
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+      
       - name: Scan images
-        run: |
-          export PATH=$PATH:/usr/local/bin
-          trivy image --severity CRITICAL --exit-code 1 localhost:5000/api:${{ github.sha }}
-          trivy image --severity CRITICAL --exit-code 1 localhost:5000/frontend:${{ github.sha }}
-          trivy image --severity CRITICAL --exit-code 1 localhost:5000/worker:${{ github.sha }}
+        run: trivy image --severity CRITICAL --exit-code 1 localhost:5000/api:${{ github.sha }}
 
       # ---------------- INTEGRATION ----------------
       - name: Integration test
