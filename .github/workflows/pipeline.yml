@@ -1,0 +1,112 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ---------------- LINT ----------------
+      - name: Install linters
+        run: |
+          pip install flake8
+          npm install -g eslint
+          sudo apt-get install -y hadolint
+
+      - name: Lint Python
+        run: flake8 api worker
+
+      - name: Lint JS
+        run: eslint frontend || true
+
+      - name: Lint Dockerfiles
+        run: hadolint api/Dockerfile frontend/Dockerfile worker/Dockerfile
+
+      # ---------------- TEST ----------------
+      - name: Install test deps
+        run: pip install pytest pytest-cov
+
+      - name: Run tests
+        run: |
+          pytest --cov=api tests/
+      
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: .coverage
+
+      # ---------------- BUILD ----------------
+      - name: Build images
+        run: |
+          docker build -t localhost:5000/api:${{ github.sha }} ./api
+          docker build -t localhost:5000/frontend:${{ github.sha }} ./frontend
+          docker build -t localhost:5000/worker:${{ github.sha }} ./worker
+
+      - name: Tag latest
+        run: |
+          docker tag localhost:5000/api:${{ github.sha }} localhost:5000/api:latest
+          docker tag localhost:5000/frontend:${{ github.sha }} localhost:5000/frontend:latest
+          docker tag localhost:5000/worker:${{ github.sha }} localhost:5000/worker:latest
+
+      - name: Push images
+        run: |
+          docker push localhost:5000/api:${{ github.sha }}
+          docker push localhost:5000/frontend:${{ github.sha }}
+          docker push localhost:5000/worker:${{ github.sha }}
+
+      # ---------------- SECURITY ----------------
+      - name: Install Trivy
+        run: |
+          sudo apt-get install -y wget
+          wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.0_Linux-64bit.deb
+          sudo dpkg -i trivy_0.50.0_Linux-64bit.deb
+
+      - name: Scan images
+        run: |
+          trivy image --severity CRITICAL --exit-code 1 localhost:5000/api:${{ github.sha }}
+          trivy image --severity CRITICAL --exit-code 1 localhost:5000/frontend:${{ github.sha }}
+          trivy image --severity CRITICAL --exit-code 1 localhost:5000/worker:${{ github.sha }}
+
+      # ---------------- INTEGRATION ----------------
+      - name: Integration test
+        run: |
+          export REDIS_PASSWORD=changeme
+          docker-compose up -d
+
+          sleep 10
+
+          curl -X POST http://localhost:3000/submit
+
+          docker-compose down
+
+      # ---------------- DEPLOY ----------------
+      - name: Deploy (rolling)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker pull localhost:5000/api:latest
+
+          docker run -d --name new_api -p 8001:8000 localhost:5000/api:latest
+
+          for i in {1..12}; do
+            if curl -f http://localhost:8001/health; then
+              docker stop api || true
+              docker rm api || true
+              docker rename new_api api
+              break
+            fi
+            sleep 5
+          done
