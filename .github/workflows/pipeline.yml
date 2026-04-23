@@ -44,7 +44,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest --cov=api tests/
+          pytest --cov=api
       
       - name: Upload coverage
         uses: actions/upload-artifact@v4
