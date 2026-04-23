@@ -15,6 +15,7 @@ USER appuser
 
 # Copy installed packages
 COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy app
 COPY . .
