@@ -89,14 +89,14 @@ jobs:
       # ---------------- INTEGRATION ----------------
       - name: Integration test
         run: |
-          export REDIS_PASSWORD=changeme
-          docker-compose up -d
+          export REDIS_PASSWORD=supersecretpassword123
+          docker compose up -d
 
           sleep 10
 
           curl -X POST http://localhost:3000/submit
 
-          docker-compose down
+          docker compose down
 
       # ---------------- DEPLOY ----------------
       - name: Deploy (rolling)
