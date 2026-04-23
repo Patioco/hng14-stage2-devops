@@ -9,10 +9,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # Install curl for healthcheck (hadolint-compliant)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-       curl=$(apt-cache madison curl | head -1 | awk '{print $3}') \
+       "curl=$(apt-cache madison curl | head -1 | awk '{print $3}')" \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
