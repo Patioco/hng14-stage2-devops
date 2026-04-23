@@ -108,10 +108,14 @@ jobs:
 
           for i in {1..12}; do
             if curl -f http://localhost:8001/health; then
-              docker stop api || true
-              docker rm api || true
+              if docker ps -a --format '{{.Names}}' | grep -q '^api$'; then
+                docker stop api
+                docker rm api
+              fi
               docker rename new_api api
               break
             fi
             sleep 5
           done
+
+    
