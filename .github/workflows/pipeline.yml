@@ -1,9 +1,5 @@
 name: CI/CD Pipeline
 
-defaults:
-  run:
-    shell: bash
-    
 on:
   push:
     branches: ["main"]
@@ -106,9 +102,9 @@ jobs:
       - name: Deploy (rolling)
         if: github.ref == 'refs/heads/main'
         run: |
-          docker pull localhost:5000/api:latest
+          docker pull localhost:5000/api:${{ github.sha }}
 
-          docker run -d --name new_api -p 8001:8000 localhost:5000/api:latest
+          docker run -d --name new_api -p 8001:8000 localhost:5000/api:${{ github.sha }}
 
           for i in {1..12}; do
             if curl -f http://localhost:8001/health; then
