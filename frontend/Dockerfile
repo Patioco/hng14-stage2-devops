@@ -1,24 +1,15 @@
-# ---- Build stage ----
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
-
 COPY package*.json ./
-RUN npm install
+RUN npm install --omit=dev
 
-COPY . .
-RUN npm run build
-
-# ---- Runtime stage ----
-FROM node:18-alpine
+FROM node:20-alpine
 WORKDIR /app
 
-RUN adduser -D app
+RUN addgroup -S app && adduser -S app -G app
 USER app
 
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY . .
 
-EXPOSE 3000
-
-HEALTHCHECK CMD wget --spider -q http://localhost:3000/health || exit 1
-
-CMD ["node", "dist/server.js"]
+CMD ["node", "app.js"]
