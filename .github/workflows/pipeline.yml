@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  pipeline:
+  build-test:
     runs-on: ubuntu-latest
 
     services:
@@ -89,21 +89,26 @@ jobs:
       # ---------------- INTEGRATION ----------------
       - name: Integration test
         run: |
-          export REDIS_PASSWORD=supersecretpassword123
           docker compose up -d
 
-          sleep 10
-
-          curl -X POST http://localhost:3000/submit
+          ./integration.sh
 
           docker compose down
 
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: github.ref == 'refs/heads/main'
+
+    steps:
       # ---------------- DEPLOY ----------------
-      - name: Deploy (rolling)
-        if: github.ref == 'refs/heads/main'
+      - name: Pull image
+        
         run: |
           docker pull localhost:5000/api:${{ github.sha }}
 
+      - name: Deploy API
+        run: |
           docker run -d --name new_api -p 8001:8000 localhost:5000/api:${{ github.sha }}
 
           for i in {1..12}; do
