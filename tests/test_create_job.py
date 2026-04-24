@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-import main
+from api.main import app
 
 class FakeRedis:
     def lpush(self, *a): pass
