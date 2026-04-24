@@ -105,23 +105,15 @@ jobs:
 
     steps:
       # ---------------- DEPLOY ----------------
-      - name: Pull image
+      - name: Deploy (rolling update) 
+        run: |
+          docker compose down
+
+          docker compose up -d --build
+
+          sleep 10
+
+          curl -f http://localhost:8000/health || exit 1
+
         
-        run: |
-          docker pull localhost:5000/api:${{ github.sha }}
-
-      - name: Deploy API
-        run: |
-          docker run -d --name new_api -p 8001:8000 localhost:5000/api:${{ github.sha }}
-
-          for i in {1..12}; do
-            if curl -f http://localhost:8001/health; then
-              if docker ps -a --format '{{.Names}}' | grep -q '^api$'; then
-                docker stop api
-                docker rm api
-              fi
-              docker rename new_api api
-              break
-            fi
-            sleep 5
-          done
+      
