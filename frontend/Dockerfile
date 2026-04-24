@@ -1,27 +1,24 @@
-FROM node:18-alpine
-
+# ---- Build stage ----
+FROM node:18-alpine AS builder
 WORKDIR /app
 
-# Create non-root user
-RUN addgroup -S app && adduser -S app -G app
-
-# Copy package files
 COPY package*.json ./
-
-# Give user ownership of /app
-RUN chown -R app:app /app
-
-# Switch to non-root user BEFORE copying package.json
-USER app
-
-# Install dependencies
 RUN npm install
 
-# Copy the rest of the app
 COPY . .
+RUN npm run build
+
+# ---- Runtime stage ----
+FROM node:18-alpine
+WORKDIR /app
+
+RUN adduser -D app
+USER app
+
+COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
 
 HEALTHCHECK CMD wget --spider -q http://localhost:3000/health || exit 1
 
-CMD ["node", "app.js"]
+CMD ["node", "dist/server.js"]
