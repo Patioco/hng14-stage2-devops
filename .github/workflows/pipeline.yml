@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  build-test:
+  pipeline:
     runs-on: ubuntu-latest
 
     services:
@@ -98,22 +98,28 @@ jobs:
 
           docker compose down
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build-test
-    if: github.ref == 'refs/heads/main'
 
-    steps:
+    
       # ---------------- DEPLOY ----------------
       - name: Deploy (rolling update) 
+        if: github.ref == 'refs/heads/main'
         run: |
-          docker compose down
+          docker pull localhost:5000/api:${{ github.sha }}
 
-          docker compose up -d --build
+          docker run -d --name new_api -p 8001:8000 localhost:5000/api:${{ github.sha }}
 
-          sleep 10
+          for i in {1..12}; do
+            if curl -f http://localhost:8001/health; then
+              if docker ps -a --format '{{.Names}}' | grep -q '^api$'; then
+                docker stop api
+                docker rm api
+              fi
+              docker rename new_api api
+              break
+            fi
+            sleep 5
+          done
 
-          curl -f http://localhost:8000/health || exit 1
 
         
       
