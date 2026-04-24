@@ -4,7 +4,9 @@ import uuid
 import redis
 from fastapi import FastAPI, HTTPException
 
+
 app = FastAPI()
+
 
 # Environment variables
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
@@ -12,8 +14,10 @@ REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
 QUEUE_NAME = "jobs"
 
+
 # Global Redis client (lazy init)
 redis_client = None
+
 
 def get_redis():
     global redis_client
@@ -35,11 +39,11 @@ def get_redis():
 
     raise Exception("Could not connect to Redis")
 
-# ---------------- Routes ----------------
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
 
 @app.post("/jobs")
 def create_job():
@@ -52,8 +56,9 @@ def create_job():
 
         return {"job_id": job_id}
 
-    except redis.exceptions.RedisError as e:
+    except redis.exceptions.RedisError:
         raise HTTPException(status_code=500, detail="Redis error")
+
 
 @app.get("/jobs/{job_id}")
 def get_job(job_id: str):
