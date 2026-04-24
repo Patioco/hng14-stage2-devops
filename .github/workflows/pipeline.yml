@@ -89,7 +89,7 @@ jobs:
       # ---------------- INTEGRATION ----------------
       - name: Integration test
         run: |
-          export REDIS_PASSWORD=supersecretpassword123
+          export REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
           chmod +x integration.sh
           docker compose up -d
           sleep 10
