@@ -18,6 +18,7 @@ RUN apt-get update \
 
 # Create non-root user BEFORE copying code
 RUN useradd -m appuser
+USER -m appuser
 
 # Copy installed packages
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
@@ -25,8 +26,6 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy app code
 COPY . .
-
-USER -m appuser
 
 EXPOSE 8000
 
