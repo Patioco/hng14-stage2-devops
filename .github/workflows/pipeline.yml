@@ -88,13 +88,13 @@ jobs:
       - name: Scan images
         run: trivy image --severity CRITICAL --exit-code 1 localhost:5000/api:${{ github.sha }}
 
-      - name: Trivy scan
-        run: trivy image --format sarif -o trivy.sarif api:latest
+      # - name: Trivy scan
+      #   run: trivy image --format sarif -o trivy.sarif api:latest
 
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trivy.sarif
+      # - name: Upload SARIF
+      #   uses: github/codeql-action/upload-sarif@v3
+      #   with:
+      #     sarif_file: trivy.sarif
 
       # ---------------- INTEGRATION ----------------
       - name: Integration test
