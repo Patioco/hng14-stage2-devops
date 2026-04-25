@@ -56,10 +56,12 @@ jobs:
 
       # ---------------- BUILD ----------------
       - name: Build images
+        env:
+          DOCKER_BUILDKIT: 1
         run: |
-          docker build -t localhost:5000/api:${{ github.sha }} ./api
-          docker build -t localhost:5000/frontend:${{ github.sha }} ./frontend
-          docker build -t localhost:5000/worker:${{ github.sha }} ./worker
+          docker build --cache-from=type=gha -t localhost:5000/api:${{ github.sha }} ./api
+          docker build --cache-from=type=gha -t localhost:5000/frontend:${{ github.sha }} ./frontend
+          docker build --cache-from=type=gha -t localhost:5000/worker:${{ github.sha }} ./worker
 
       - name: Tag latest
         run: |
@@ -86,10 +88,19 @@ jobs:
       - name: Scan images
         run: trivy image --severity CRITICAL --exit-code 1 localhost:5000/api:${{ github.sha }}
 
+      - name: Trivy scan
+        run: trivy image --format sarif -o trivy.sarif api:latest
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy.sarif
+
       # ---------------- INTEGRATION ----------------
       - name: Integration test
+        env:
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
-          export REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
           chmod +x integration.sh
           docker compose up -d
           sleep 10
@@ -120,6 +131,9 @@ jobs:
             sleep 5
           done
 
+      - name: Teardown
+        if: always()
+        run: docker compose down
 
         
       

@@ -26,7 +26,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy app code
 COPY . .
 
-USER appuser
+USER -m appuser
 
 EXPOSE 8000
 
