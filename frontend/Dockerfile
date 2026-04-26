@@ -12,4 +12,6 @@ USER app
 COPY --from=builder /app/node_modules ./node_modules
 COPY . .
 
+HEALTHCHECK CMD wget --spider -q http://localhost:3000 || exit 1
+
 CMD ["node", "app.js"]
