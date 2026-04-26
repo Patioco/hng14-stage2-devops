@@ -1,7 +1,5 @@
 name: CI/CD Pipeline
 
-timeout-minutes: 5
-
 on:
   push:
     branches: ["main"]
@@ -9,6 +7,7 @@ on:
 
 jobs:
   pipeline:
+    timeout-minutes: 5
     runs-on: ubuntu-latest
 
     services:
